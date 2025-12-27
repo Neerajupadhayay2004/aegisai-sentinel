@@ -1,0 +1,10 @@
+project_id = "djjifsngoqlbvshpnrfw"
+
+[functions.ai-security-chat]
+verify_jwt = false
+
+[functions.telegram-notify]
+verify_jwt = false
+
+[functions.threat-analysis]
+verify_jwt = false

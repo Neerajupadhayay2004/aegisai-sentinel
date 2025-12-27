@@ -1,0 +1,178 @@
+/* =======================
+   GOOGLE FONTS (MUST BE FIRST)
+   ======================= */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* =======================
+   TAILWIND DIRECTIVES
+   ======================= */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =======================
+   BASE THEME VARIABLES
+   ======================= */
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 173 80% 50%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 142 76% 45%;
+    --accent-foreground: 222 47% 6%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
+
+    --success: 142 76% 45%;
+    --success-foreground: 222 47% 6%;
+
+    --border: 222 47% 18%;
+    --input: 222 47% 14%;
+    --ring: 173 80% 50%;
+
+    --radius: 0.75rem;
+
+    /* Cyber Colors */
+    --cyber-cyan: 173 80% 50%;
+    --cyber-cyan-glow: 173 80% 60%;
+    --cyber-green: 142 76% 45%;
+    --cyber-green-glow: 142 76% 55%;
+    --cyber-purple: 265 80% 60%;
+    --cyber-red: 0 84% 60%;
+    --cyber-orange: 25 95% 55%;
+    --cyber-blue: 210 100% 60%;
+
+    /* Gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(173 80% 50%), hsl(142 76% 45%));
+    --gradient-dark: linear-gradient(180deg, hsl(222 47% 8%), hsl(222 47% 4%));
+    --gradient-glow: linear-gradient(135deg, hsl(173 80% 50% / 0.2), hsl(142 76% 45% / 0.1));
+    --gradient-threat: linear-gradient(135deg, hsl(0 84% 60%), hsl(25 95% 55%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 55%));
+
+    /* Shadows */
+    --shadow-cyber: 0 0 30px hsl(173 80% 50% / 0.3);
+    --shadow-glow: 0 0 60px hsl(173 80% 50% / 0.2);
+    --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.4);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* =======================
+   COMPONENTS
+   ======================= */
+@layer components {
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50 rounded-xl;
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass-card-glow {
+    @apply glass-card;
+    box-shadow: var(--shadow-card), 0 0 30px hsl(var(--primary) / 0.1);
+  }
+
+  .cyber-text {
+    @apply text-primary;
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+
+  .threat-critical {
+    @apply text-destructive;
+    text-shadow: 0 0 10px hsl(var(--destructive) / 0.5);
+  }
+
+  .threat-warning {
+    color: hsl(var(--warning));
+    text-shadow: 0 0 10px hsl(var(--warning) / 0.5);
+  }
+
+  .threat-success {
+    @apply text-accent;
+    text-shadow: 0 0 10px hsl(var(--accent) / 0.5);
+  }
+}
+
+/* =======================
+   UTILITIES
+   ======================= */
+@layer utilities {
+  .text-gradient-cyber {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-cyber);
+  }
+
+  .bg-gradient-cyber {
+    background-image: var(--gradient-cyber);
+  }
+
+  .scrollbar-cyber {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+  }
+}
+
+/* =======================
+   ANIMATIONS
+   ======================= */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* =======================
+   BACKGROUND PATTERNS
+   ======================= */
+.grid-pattern {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.hex-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='%2300d4aa' stroke-opacity='0.03' stroke-width='1'/%3E%3C/svg%3E");
+}
