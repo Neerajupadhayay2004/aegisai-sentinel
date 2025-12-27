@@ -12,6 +12,7 @@ import Compliance from "./pages/Compliance";
 import ZeroTrust from "./pages/ZeroTrust";
 import Assistant from "./pages/Assistant";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
           <Route path="/predictive" element={<PredictiveAnalytics />} />
           <Route path="/scanning" element={<Scanning />} />
