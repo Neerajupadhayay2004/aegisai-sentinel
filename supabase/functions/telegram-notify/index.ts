@@ -34,8 +34,32 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
     const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
 
+    console.log("Telegram config check - Token exists:", !!TELEGRAM_BOT_TOKEN, "Chat ID exists:", !!TELEGRAM_CHAT_ID);
+
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      throw new Error("Telegram credentials not configured");
+      console.error("Missing credentials - Token:", !!TELEGRAM_BOT_TOKEN, "ChatID:", !!TELEGRAM_CHAT_ID);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Telegram credentials not configured",
+        hint: "Please ensure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set in secrets"
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate token format (should be like 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ)
+    const tokenRegex = /^\d+:[A-Za-z0-9_-]+$/;
+    if (!tokenRegex.test(TELEGRAM_BOT_TOKEN)) {
+      console.error("Invalid token format");
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Invalid bot token format",
+        hint: "Token should be in format: 123456789:ABCdefGHI..."
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let message = "";
@@ -75,6 +99,8 @@ serve(async (req) => {
       message = `⚡ *AegisAI Alert*\n\n${notification.title}\n\n${notification.message}`;
     }
 
+    console.log("Sending message to Telegram...");
+    
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
@@ -89,10 +115,29 @@ serve(async (req) => {
     );
 
     const result = await telegramResponse.json();
+    console.log("Telegram API response:", JSON.stringify(result));
 
     if (!result.ok) {
       console.error("Telegram API error:", result);
-      throw new Error(result.description || "Failed to send Telegram message");
+      
+      // Provide helpful error messages
+      let hint = "Unknown error";
+      if (result.error_code === 404) {
+        hint = "Bot not found or chat not started. Please send /start to your bot first.";
+      } else if (result.error_code === 400) {
+        hint = "Invalid chat_id. Make sure you're using the correct numeric chat ID.";
+      } else if (result.error_code === 401) {
+        hint = "Invalid bot token. Please verify the token is correct.";
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: result.description || "Failed to send Telegram message",
+        hint: hint
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ success: true, message_id: result.result.message_id }), {
