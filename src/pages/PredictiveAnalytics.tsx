@@ -1,5 +1,6 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { WorldThreatMap } from '@/components/dashboard/WorldThreatMap';
+import { AdvancedWorldMap } from '@/components/dashboard/AdvancedWorldMap';
+import { AIFirewallAnalysis } from '@/components/dashboard/AIFirewallAnalysis';
 import { RiskPredictionChart, AttackVectorForecast, SecurityPostureRadar, VulnerabilityTrend, AIPredictionSummary } from '@/components/dashboard/PredictiveCharts';
 import { AISecurityChatLive } from '@/components/dashboard/AISecurityChatLive';
 import { motion } from 'framer-motion';
@@ -37,40 +38,50 @@ const PredictiveAnalytics = () => {
         </motion.div>
       </div>
 
-      {/* World Threat Map */}
+      {/* Advanced World Map with Sound & Notifications */}
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
         className="mb-8"
       >
-        <WorldThreatMap />
+        <AdvancedWorldMap />
+      </motion.div>
+
+      {/* AI Firewall Analysis */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mb-8"
+      >
+        <AIFirewallAnalysis />
       </motion.div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <RiskPredictionChart />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <SecurityPostureRadar />
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <AttackVectorForecast />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <VulnerabilityTrend />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
           <AIPredictionSummary />
         </motion.div>
       </div>
 
       {/* AI Chat */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
         <AISecurityChatLive threatContext={{ activeThreats: 6, riskScore: 72, recentIncidents: ['Ransomware', 'Brute Force', 'Data Exfiltration'] }} />
       </motion.div>
     </DashboardLayout>
