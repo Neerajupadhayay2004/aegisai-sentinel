@@ -17,6 +17,7 @@ import { RadarScanner } from '@/components/dashboard/RadarScanner';
 import { ThreatChart, ThreatDistributionChart, ComplianceChart } from '@/components/dashboard/Charts';
 import { LiveScanStatus } from '@/components/dashboard/LiveScanStatus';
 import { AISecurityChat } from '@/components/dashboard/AISecurityChat';
+import { GlobalThreatMapSection } from '@/components/dashboard/GlobalThreatMapSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -109,6 +110,11 @@ const Index = () => {
           icon={Wifi}
           subtitle="Requests/min"
         />
+      </div>
+
+      {/* Global Threat Map Section */}
+      <div className="mb-8">
+        <GlobalThreatMapSection />
       </div>
 
       {/* Main Grid */}
