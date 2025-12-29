@@ -18,6 +18,9 @@ import { ThreatChart, ThreatDistributionChart, ComplianceChart } from '@/compone
 import { LiveScanStatus } from '@/components/dashboard/LiveScanStatus';
 import { AISecurityChat } from '@/components/dashboard/AISecurityChat';
 import { GlobalThreatMapSection } from '@/components/dashboard/GlobalThreatMapSection';
+import { GeolocationBlocking } from '@/components/dashboard/GeolocationBlocking';
+import { AudioControlPanel } from '@/components/dashboard/AudioControlPanel';
+import { RealTimeThreatFeed } from '@/components/dashboard/RealTimeThreatFeed';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,6 +65,7 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <AudioControlPanel compact />
             <Badge variant="active" className="px-4 py-2 text-sm gap-2">
               <span className="w-2 h-2 bg-current rounded-full animate-pulse" />
               {activeThreats.length} Active Threats
@@ -149,6 +153,16 @@ const Index = () => {
             <ThreatDistributionChart />
             <ComplianceChart />
           </div>
+        </div>
+      </div>
+
+      {/* Real-Time Threats & Geolocation Blocking */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+        <div className="xl:col-span-2">
+          <RealTimeThreatFeed maxThreats={15} />
+        </div>
+        <div>
+          <GeolocationBlocking />
         </div>
       </div>
 

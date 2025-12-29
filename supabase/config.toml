@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.threat-analysis]
 verify_jwt = false
+
+[functions.threat-intelligence]
+verify_jwt = false
