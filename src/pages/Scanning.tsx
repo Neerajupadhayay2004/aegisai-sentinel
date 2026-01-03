@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { RadarScanner } from '@/components/dashboard/RadarScanner';
 import { LiveScanStatus } from '@/components/dashboard/LiveScanStatus';
+import { VulnerabilityScanner } from '@/components/dashboard/VulnerabilityScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -217,11 +218,15 @@ const Scanning = () => {
         )}
       </AnimatePresence>
 
-      <Tabs defaultValue="results" className="space-y-6">
-        <TabsList className="bg-secondary/50">
+      <Tabs defaultValue="vulnerability" className="space-y-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsTrigger value="vulnerability" className="gap-2">
+            <Bug className="h-4 w-4" />
+            CVE Scanner
+          </TabsTrigger>
           <TabsTrigger value="results" className="gap-2">
             <Activity className="h-4 w-4" />
-            Scan Results
+            Results
           </TabsTrigger>
           <TabsTrigger value="quick-scan" className="gap-2">
             <Scan className="h-4 w-4" />
@@ -232,6 +237,15 @@ const Scanning = () => {
             Live Status
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="vulnerability">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <VulnerabilityScanner />
+          </motion.div>
+        </TabsContent>
 
         <TabsContent value="results">
           <Card variant="glass">

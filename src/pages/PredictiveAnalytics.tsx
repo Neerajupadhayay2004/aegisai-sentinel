@@ -1,5 +1,5 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { AdvancedWorldMap } from '@/components/dashboard/AdvancedWorldMap';
+import { GlobalThreatMapAdvanced } from '@/components/dashboard/GlobalThreatMapAdvanced';
 import { AIFirewallAnalysis } from '@/components/dashboard/AIFirewallAnalysis';
 import { NetworkTrafficAnalysis } from '@/components/dashboard/NetworkTrafficAnalysis';
 import { ThreatIntelligenceFeeds } from '@/components/dashboard/ThreatIntelligenceFeeds';
@@ -68,7 +68,7 @@ const PredictiveAnalytics = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <AdvancedWorldMap />
+            <GlobalThreatMapAdvanced />
           </motion.div>
           
           <motion.div
