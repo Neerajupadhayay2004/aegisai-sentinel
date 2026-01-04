@@ -99,7 +99,7 @@ const Auth = () => {
         }
       } else {
         const redirectUrl = `${window.location.origin}/`;
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -123,6 +123,14 @@ const Auth = () => {
             });
           }
         } else {
+          // Create profile for new user
+          if (data.user) {
+            await supabase.from('profiles').insert({
+              user_id: data.user.id,
+              full_name: fullName,
+              email: email,
+            });
+          }
           toast({
             title: "Account Created",
             description: "Welcome to AegisAI Sentinel! You are now logged in.",
