@@ -5,9 +5,12 @@ import { NetworkTrafficAnalysis } from '@/components/dashboard/NetworkTrafficAna
 import { ThreatIntelligenceFeeds } from '@/components/dashboard/ThreatIntelligenceFeeds';
 import { RiskPredictionChart, AttackVectorForecast, SecurityPostureRadar, VulnerabilityTrend, AIPredictionSummary } from '@/components/dashboard/PredictiveCharts';
 import { AISecurityChatLive } from '@/components/dashboard/AISecurityChatLive';
+import { AzureSecurityHub } from '@/components/dashboard/AzureSecurityHub';
+import { BlockchainSecurityModule } from '@/components/dashboard/BlockchainSecurityModule';
+import { SecurityAlertCenter } from '@/components/dashboard/SecurityAlertCenter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
-import { Brain, Globe, TrendingUp, Network, Shield, Activity } from 'lucide-react';
+import { Brain, Globe, TrendingUp, Network, Shield, Activity, Cloud, Link2, Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const PredictiveAnalytics = () => {
@@ -25,13 +28,21 @@ const PredictiveAnalytics = () => {
               <span className="text-gradient-cyber">Predictive</span> Analytics
             </h1>
             <p className="text-muted-foreground">
-              AI-powered threat forecasting and global attack intelligence
+              AI-powered threat forecasting with Azure & Blockchain integration
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Badge variant="info" className="px-4 py-2 text-sm gap-2">
               <Brain className="h-4 w-4" />
               AI Model Active
+            </Badge>
+            <Badge className="px-4 py-2 text-sm gap-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
+              <Cloud className="h-4 w-4" />
+              Azure Connected
+            </Badge>
+            <Badge className="px-4 py-2 text-sm gap-2 bg-purple-500/20 text-purple-400 border-purple-500/30">
+              <Link2 className="h-4 w-4" />
+              Blockchain Verified
             </Badge>
             <Badge variant="active" className="px-4 py-2 text-sm gap-2">
               <Globe className="h-4 w-4" />
@@ -43,14 +54,22 @@ const PredictiveAnalytics = () => {
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="map" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6">
           <TabsTrigger value="map" className="gap-2">
             <Globe className="h-4 w-4" />
             Global Map
           </TabsTrigger>
-          <TabsTrigger value="network" className="gap-2">
-            <Network className="h-4 w-4" />
-            Network
+          <TabsTrigger value="azure" className="gap-2">
+            <Cloud className="h-4 w-4" />
+            Azure Hub
+          </TabsTrigger>
+          <TabsTrigger value="blockchain" className="gap-2">
+            <Link2 className="h-4 w-4" />
+            Blockchain
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-2">
+            <Bell className="h-4 w-4" />
+            Alerts
           </TabsTrigger>
           <TabsTrigger value="intel" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -80,23 +99,50 @@ const PredictiveAnalytics = () => {
           </motion.div>
         </TabsContent>
 
-        {/* Network Traffic Tab */}
-        <TabsContent value="network">
+        {/* Azure Security Hub Tab */}
+        <TabsContent value="azure">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <NetworkTrafficAnalysis />
+            <AzureSecurityHub />
+          </motion.div>
+        </TabsContent>
+
+        {/* Blockchain Security Tab */}
+        <TabsContent value="blockchain">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <BlockchainSecurityModule />
+          </motion.div>
+        </TabsContent>
+
+        {/* Security Alerts Tab */}
+        <TabsContent value="alerts">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <SecurityAlertCenter />
           </motion.div>
         </TabsContent>
 
         {/* Threat Intelligence Tab */}
-        <TabsContent value="intel">
+        <TabsContent value="intel" className="space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <ThreatIntelligenceFeeds />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <NetworkTrafficAnalysis />
           </motion.div>
         </TabsContent>
 

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import PredictiveAnalytics from "./pages/PredictiveAnalytics";
 import Scanning from "./pages/Scanning";
@@ -25,15 +26,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Index />} />
-          <Route path="/predictive" element={<PredictiveAnalytics />} />
-          <Route path="/scanning" element={<Scanning />} />
-          <Route path="/endpoints" element={<Endpoints />} />
-          <Route path="/incidents" element={<Incidents />} />
-          <Route path="/compliance" element={<Compliance />} />
-          <Route path="/zero-trust" element={<ZeroTrust />} />
-          <Route path="/assistant" element={<Assistant />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/predictive" element={<ProtectedRoute><PredictiveAnalytics /></ProtectedRoute>} />
+          <Route path="/scanning" element={<ProtectedRoute><Scanning /></ProtectedRoute>} />
+          <Route path="/endpoints" element={<ProtectedRoute><Endpoints /></ProtectedRoute>} />
+          <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
+          <Route path="/compliance" element={<ProtectedRoute><Compliance /></ProtectedRoute>} />
+          <Route path="/zero-trust" element={<ProtectedRoute><ZeroTrust /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
