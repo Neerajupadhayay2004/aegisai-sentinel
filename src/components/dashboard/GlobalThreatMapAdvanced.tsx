@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { 
   Globe, 
   AlertTriangle, 
@@ -13,20 +15,21 @@ import {
   BellOff,
   MapPin,
   Target,
-  Wifi,
   Radio,
-  Server,
-  Crosshair,
   Satellite,
-  Radar,
   Cloud,
   Link2,
   Eye,
-  Lock
+  Lock,
+  Crosshair,
+  Settings,
+  Layers,
+  Navigation
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useThreatAlerts } from '@/hooks/useThreatAlerts';
 
@@ -42,24 +45,12 @@ interface ThreatLocation {
   ip: string;
 }
 
-interface AttackLine {
+interface AttackEvent {
   id: number;
   from: ThreatLocation;
-  progress: number;
-  intercepted: boolean;
+  timestamp: Date;
+  blocked: boolean;
 }
-
-// Enhanced world map paths with more detail
-const WORLD_CONTINENTS = {
-  northAmerica: `M 50 80 L 90 60 L 140 55 L 180 65 L 210 85 L 230 110 L 225 140 L 200 170 L 165 185 L 130 180 L 100 200 L 80 180 L 60 160 L 45 130 L 50 100 Z`,
-  southAmerica: `M 150 220 L 180 210 L 210 230 L 220 270 L 215 320 L 195 370 L 170 400 L 155 380 L 145 340 L 140 290 L 145 250 Z`,
-  europe: `M 420 65 L 470 55 L 520 60 L 560 70 L 580 95 L 570 120 L 540 135 L 500 140 L 460 130 L 430 115 L 420 90 Z`,
-  africa: `M 420 150 L 480 140 L 530 155 L 560 190 L 555 250 L 530 310 L 490 350 L 450 340 L 420 300 L 415 250 L 420 200 Z`,
-  asia: `M 560 50 L 650 40 L 750 50 L 850 70 L 900 100 L 920 150 L 900 200 L 850 230 L 780 250 L 700 240 L 640 210 L 590 170 L 570 130 L 560 90 Z`,
-  australia: `M 780 280 L 850 270 L 900 290 L 920 330 L 900 370 L 850 385 L 800 375 L 770 340 L 775 310 Z`,
-  india: `M 640 160 L 680 150 L 720 170 L 730 210 L 710 250 L 670 260 L 640 240 L 635 200 Z`,
-  middleEast: `M 540 140 L 600 130 L 640 150 L 650 190 L 620 220 L 570 210 L 545 180 Z`,
-};
 
 const threatLocations: ThreatLocation[] = [
   { id: '1', country: 'Russia', city: 'Moscow', lat: 55.76, lng: 37.62, threatCount: 156, severity: 'critical', type: 'APT Campaign', ip: '185.243.xxx.xxx' },
@@ -79,25 +70,25 @@ const threatLocations: ThreatLocation[] = [
   { id: '15', country: 'Singapore', city: 'Singapore', lat: 1.35, lng: 103.82, threatCount: 19, severity: 'low', type: 'Data Exfiltration', ip: '203.116.xxx.xxx' },
 ];
 
-const latLngToSVG = (lat: number, lng: number, width: number = 1000, height: number = 450) => {
-  const x = ((lng + 180) / 360) * width;
-  const y = ((90 - lat) / 180) * height;
-  return { x, y };
-};
+// HQ Location - New Delhi, India
+const HQ_LOCATION = { lat: 28.6139, lng: 77.2090 };
 
 export const GlobalThreatMapAdvanced = () => {
-  const [threats] = useState<ThreatLocation[]>(threatLocations);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [mapToken, setMapToken] = useState('');
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState<ThreatLocation | null>(null);
-  const [attackLines, setAttackLines] = useState<AttackLine[]>([]);
+  const [attackEvents, setAttackEvents] = useState<AttackEvent[]>([]);
+  const [mapStyle, setMapStyle] = useState<'dark' | 'satellite' | 'light'>('dark');
   const [liveStats, setLiveStats] = useState({
     totalAttacks: 24589,
     blocked: 24312,
     intercepted: 277,
-    activeThreats: threats.length,
+    activeThreats: threatLocations.length,
   });
-  const [hoveredThreat, setHoveredThreat] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'map' | 'satellite' | 'threat'>('map');
-  
+
   const { 
     soundEnabled, 
     notificationsEnabled, 
@@ -106,55 +97,8 @@ export const GlobalThreatMapAdvanced = () => {
     triggerAlert 
   } = useThreatAlerts();
 
-  // Target position (HQ in India)
-  const targetPos = latLngToSVG(28.61, 77.21);
-
-  // Generate attack lines
-  useEffect(() => {
-    let attackId = 0;
-    const interval = setInterval(() => {
-      const randomThreat = threats[Math.floor(Math.random() * threats.length)];
-      const isIntercepted = Math.random() > 0.12;
-      
-      setAttackLines(prev => [...prev.slice(-15), { 
-        id: attackId++, 
-        from: randomThreat, 
-        progress: 0,
-        intercepted: isIntercepted
-      }]);
-      
-      setLiveStats(prev => ({
-        ...prev,
-        totalAttacks: prev.totalAttacks + 1,
-        blocked: isIntercepted ? prev.blocked + 1 : prev.blocked,
-        intercepted: !isIntercepted ? prev.intercepted + 1 : prev.intercepted,
-      }));
-
-      if (randomThreat.severity === 'critical' && Math.random() > 0.9) {
-        triggerAlert(
-          randomThreat.type,
-          randomThreat.severity,
-          `${randomThreat.city}, ${randomThreat.country}`,
-          `Active threat from ${randomThreat.ip}`
-        );
-      }
-    }, 600);
-
-    return () => clearInterval(interval);
-  }, [threats, triggerAlert]);
-
-  // Animate attack lines
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAttackLines(prev => 
-        prev.map(line => ({ ...line, progress: Math.min(line.progress + 0.018, 1) }))
-            .filter(line => line.progress < 1)
-      );
-    }, 16);
-    return () => clearInterval(interval);
-  }, []);
-
-  const getSeverityColor = (severity: string) => {
+  // Get severity color
+  const getSeverityColor = (severity: string): string => {
     switch (severity) {
       case 'critical': return '#ff3b3b';
       case 'high': return '#ff8c00';
@@ -164,11 +108,215 @@ export const GlobalThreatMapAdvanced = () => {
     }
   };
 
-  const criticalThreats = threats.filter(t => t.severity === 'critical');
-  const totalThreatCount = threats.reduce((acc, t) => acc + t.threatCount, 0);
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainer.current || !mapToken || isMapInitialized) return;
+
+    mapboxgl.accessToken = mapToken;
+
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: mapStyle === 'dark' 
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : mapStyle === 'satellite'
+          ? 'mapbox://styles/mapbox/satellite-streets-v12'
+          : 'mapbox://styles/mapbox/light-v11',
+        projection: 'globe',
+        zoom: 1.8,
+        center: [30, 20],
+        pitch: 45,
+        bearing: 0,
+      });
+
+      map.current.addControl(
+        new mapboxgl.NavigationControl({ visualizePitch: true }),
+        'top-right'
+      );
+
+      map.current.on('style.load', () => {
+        if (!map.current) return;
+
+        // Add atmosphere and fog for 3D globe effect
+        map.current.setFog({
+          color: 'rgb(10, 10, 30)',
+          'high-color': 'rgb(20, 20, 60)',
+          'horizon-blend': 0.1,
+          'star-intensity': 0.15,
+          'space-color': 'rgb(5, 5, 15)',
+        });
+
+        // Add threat markers
+        threatLocations.forEach((threat) => {
+          const el = document.createElement('div');
+          el.className = 'threat-marker';
+          el.style.cssText = `
+            width: ${threat.severity === 'critical' ? 24 : threat.severity === 'high' ? 20 : 16}px;
+            height: ${threat.severity === 'critical' ? 24 : threat.severity === 'high' ? 20 : 16}px;
+            background: ${getSeverityColor(threat.severity)};
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px ${getSeverityColor(threat.severity)}, 0 0 40px ${getSeverityColor(threat.severity)}50;
+            animation: pulse 2s ease-in-out infinite;
+          `;
+
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([threat.lng, threat.lat])
+            .addTo(map.current!);
+
+          el.addEventListener('click', () => {
+            setSelectedThreat(threat);
+            map.current?.flyTo({
+              center: [threat.lng, threat.lat],
+              zoom: 5,
+              duration: 2000,
+            });
+          });
+
+          markersRef.current.push(marker);
+        });
+
+        // Add HQ marker
+        const hqEl = document.createElement('div');
+        hqEl.style.cssText = `
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #00ff88, #00cc66);
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 30px #00ff88, 0 0 60px #00ff8850;
+          animation: pulse 1.5s ease-in-out infinite;
+        `;
+        
+        new mapboxgl.Marker(hqEl)
+          .setLngLat([HQ_LOCATION.lng, HQ_LOCATION.lat])
+          .addTo(map.current!);
+
+        setIsMapInitialized(true);
+      });
+
+      // Auto-rotate globe
+      const secondsPerRevolution = 300;
+      let userInteracting = false;
+
+      function spinGlobe() {
+        if (!map.current || userInteracting) return;
+        const zoom = map.current.getZoom();
+        if (zoom < 5) {
+          const center = map.current.getCenter();
+          center.lng += 360 / secondsPerRevolution;
+          map.current.easeTo({ center, duration: 1000, easing: (n) => n });
+        }
+      }
+
+      map.current.on('mousedown', () => { userInteracting = true; });
+      map.current.on('mouseup', () => { userInteracting = false; spinGlobe(); });
+      map.current.on('moveend', spinGlobe);
+      spinGlobe();
+
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.current?.remove();
+      map.current = null;
+      setIsMapInitialized(false);
+    };
+  }, [mapToken]);
+
+  // Update map style
+  useEffect(() => {
+    if (!map.current || !isMapInitialized) return;
+    
+    const styleUrl = mapStyle === 'dark' 
+      ? 'mapbox://styles/mapbox/dark-v11'
+      : mapStyle === 'satellite'
+      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+      : 'mapbox://styles/mapbox/light-v11';
+    
+    map.current.setStyle(styleUrl);
+  }, [mapStyle, isMapInitialized]);
+
+  // Simulate attack events
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const randomThreat = threatLocations[Math.floor(Math.random() * threatLocations.length)];
+      const isBlocked = Math.random() > 0.12;
+
+      setAttackEvents(prev => [...prev.slice(-20), {
+        id: Date.now(),
+        from: randomThreat,
+        timestamp: new Date(),
+        blocked: isBlocked,
+      }]);
+
+      setLiveStats(prev => ({
+        ...prev,
+        totalAttacks: prev.totalAttacks + 1,
+        blocked: isBlocked ? prev.blocked + 1 : prev.blocked,
+        intercepted: !isBlocked ? prev.intercepted + 1 : prev.intercepted,
+      }));
+
+      if (randomThreat.severity === 'critical' && Math.random() > 0.85) {
+        triggerAlert(
+          randomThreat.type,
+          randomThreat.severity,
+          `${randomThreat.city}, ${randomThreat.country}`,
+          `Active threat from ${randomThreat.ip}`
+        );
+      }
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [triggerAlert]);
+
+  const criticalThreats = threatLocations.filter(t => t.severity === 'critical');
+
+  if (!mapToken) {
+    return (
+      <Card variant="glass" className="relative overflow-hidden">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <Globe className="h-7 w-7 text-primary" />
+            <span className="text-gradient-cyber">Global</span> Threat Intelligence
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            Enter your Mapbox public token to enable the interactive 3D threat map.
+            Get your token from <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">mapbox.com</a>
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="pk.eyJ1Ij..."
+              value={mapToken}
+              onChange={(e) => setMapToken(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={() => setMapToken(mapToken)} disabled={!mapToken}>
+              Initialize Map
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card variant="glass" className="relative overflow-hidden">
+      {/* Add CSS for pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+        }
+      `}</style>
+
       <CardHeader className="pb-2 px-4 sm:px-6">
         <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -180,7 +328,7 @@ export const GlobalThreatMapAdvanced = () => {
               <span className="text-xl font-bold">
                 <span className="text-gradient-cyber">Global</span> Threat Intelligence
               </span>
-              <p className="text-xs text-muted-foreground">Real-time cyber attack visualization powered by Azure Sentinel</p>
+              <p className="text-xs text-muted-foreground">Real-time 3D cyber attack visualization</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -219,7 +367,7 @@ export const GlobalThreatMapAdvanced = () => {
           </Badge>
         </div>
 
-        {/* Enhanced Stats Bar */}
+        {/* Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-secondary/30 via-secondary/50 to-secondary/30">
           <motion.div 
             className="text-center p-2 rounded-lg bg-background/60 backdrop-blur-sm border border-border/30"
@@ -270,382 +418,154 @@ export const GlobalThreatMapAdvanced = () => {
         </div>
 
         {/* Map Container */}
-        <div className="relative w-full aspect-[2/1] min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] bg-gradient-radial from-primary/5 via-background to-background overflow-hidden">
-          {/* Animated Background Grid */}
-          <div className="absolute inset-0 pointer-events-none opacity-40">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="hexGrid" width="40" height="35" patternUnits="userSpaceOnUse">
-                  <path d="M20 0 L40 10 L40 30 L20 40 L0 30 L0 10 Z" 
-                        fill="none" stroke="hsl(var(--primary))" strokeWidth="0.3" opacity="0.4" />
-                </pattern>
-                <linearGradient id="gridFade" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="white" stopOpacity="1" />
-                  <stop offset="50%" stopColor="white" stopOpacity="0.5" />
-                  <stop offset="100%" stopColor="white" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#hexGrid)" mask="url(#gridFade)" />
-            </svg>
+        <div className="relative w-full aspect-[2/1] min-h-[500px] lg:min-h-[600px]">
+          <div ref={mapContainer} className="absolute inset-0" />
+          
+          {/* Map Style Controls */}
+          <div className="absolute top-4 left-4 z-10 flex gap-2">
+            <Button
+              size="sm"
+              variant={mapStyle === 'dark' ? 'default' : 'outline'}
+              onClick={() => setMapStyle('dark')}
+              className="h-8 text-xs"
+            >
+              <Layers className="h-3 w-3 mr-1" />
+              Dark
+            </Button>
+            <Button
+              size="sm"
+              variant={mapStyle === 'satellite' ? 'default' : 'outline'}
+              onClick={() => setMapStyle('satellite')}
+              className="h-8 text-xs"
+            >
+              <Satellite className="h-3 w-3 mr-1" />
+              Satellite
+            </Button>
+            <Button
+              size="sm"
+              variant={mapStyle === 'light' ? 'default' : 'outline'}
+              onClick={() => setMapStyle('light')}
+              className="h-8 text-xs"
+            >
+              <Globe className="h-3 w-3 mr-1" />
+              Light
+            </Button>
           </div>
 
-          {/* Glowing Orbs Background */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <motion.div 
-              className="absolute top-1/4 left-1/6 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"
-              animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.3, 1] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
-            <motion.div 
-              className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl"
-              animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
-              transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-            />
-            <motion.div 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl"
-              animate={{ opacity: [0.1, 0.3, 0.1] }}
-              transition={{ duration: 6, repeat: Infinity, delay: 2 }}
-            />
+          {/* HQ Indicator */}
+          <div className="absolute bottom-4 left-4 z-10 p-3 bg-background/80 backdrop-blur-sm rounded-lg border border-success/30">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
+              <span className="text-xs font-semibold">HQ: New Delhi, India</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">Defense Command Center</p>
           </div>
 
-          {/* SVG Map */}
-          <svg 
-            viewBox="0 0 1000 450" 
-            className="absolute inset-0 w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <defs>
-              {/* Gradients */}
-              <radialGradient id="targetGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#00ff88" stopOpacity="1" />
-                <stop offset="50%" stopColor="#00ff88" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#00ff88" stopOpacity="0" />
-              </radialGradient>
-              
-              <radialGradient id="threatGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#ff3b3b" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#ff3b3b" stopOpacity="0" />
-              </radialGradient>
-
-              <radialGradient id="azureGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#0078d4" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#0078d4" stopOpacity="0" />
-              </radialGradient>
-
-              {/* Filters */}
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-
-              <filter id="strongGlow" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-
-            {/* World Map Continents */}
-            {Object.entries(WORLD_CONTINENTS).map(([name, path]) => (
-              <path 
-                key={name}
-                d={path} 
-                fill="hsl(var(--primary))" 
-                fillOpacity="0.15"
-                stroke="hsl(var(--primary))"
-                strokeWidth="1.5"
-                strokeOpacity="0.5"
-                filter="url(#glow)"
-                className="transition-all duration-300 hover:fill-opacity-25"
-              />
-            ))}
-
-            {/* Grid Lines */}
-            {[...Array(9)].map((_, i) => (
-              <line 
-                key={`h-${i}`}
-                x1="0" 
-                y1={50 * (i + 1)} 
-                x2="1000" 
-                y2={50 * (i + 1)} 
-                stroke="hsl(var(--primary))" 
-                strokeOpacity="0.1" 
-                strokeWidth="0.5"
-              />
-            ))}
-            {[...Array(19)].map((_, i) => (
-              <line 
-                key={`v-${i}`}
-                x1={50 * (i + 1)} 
-                y1="0" 
-                x2={50 * (i + 1)} 
-                y2="450" 
-                stroke="hsl(var(--primary))" 
-                strokeOpacity="0.1" 
-                strokeWidth="0.5"
-              />
-            ))}
-
-            {/* Attack Lines with Bezier Curves */}
-            {attackLines.map((attack) => {
-              const fromPos = latLngToSVG(attack.from.lat, attack.from.lng);
-              const progress = attack.progress;
-              
-              // Create curved path
-              const midX = (fromPos.x + targetPos.x) / 2;
-              const midY = Math.min(fromPos.y, targetPos.y) - 60 - Math.random() * 30;
-              
-              // Calculate current position on curve
-              const t = progress;
-              const currentX = Math.pow(1-t, 2) * fromPos.x + 2 * (1-t) * t * midX + Math.pow(t, 2) * targetPos.x;
-              const currentY = Math.pow(1-t, 2) * fromPos.y + 2 * (1-t) * t * midY + Math.pow(t, 2) * targetPos.y;
-              
-              return (
-                <g key={attack.id}>
-                  {/* Trail */}
-                  <path
-                    d={`M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY} ${currentX} ${currentY}`}
-                    fill="none"
-                    stroke={attack.intercepted ? getSeverityColor(attack.from.severity) : '#00ff88'}
-                    strokeWidth="2"
-                    strokeOpacity={0.6}
-                    filter="url(#glow)"
-                  />
-                  
-                  {/* Moving point */}
-                  <circle 
-                    cx={currentX} 
-                    cy={currentY} 
-                    r="4" 
-                    fill={attack.intercepted ? getSeverityColor(attack.from.severity) : '#00ff88'}
-                    filter="url(#strongGlow)"
-                  />
-
-                  {/* Intercept effect */}
-                  {progress > 0.85 && attack.intercepted && (
-                    <circle
-                      cx={targetPos.x}
-                      cy={targetPos.y}
-                      r={(1 - progress) * 100 + 20}
-                      fill="none"
-                      stroke="#00ff88"
-                      strokeWidth="2"
-                      opacity={(1 - progress) * 3}
-                      filter="url(#glow)"
-                    />
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Threat Points */}
-            {threats.map((threat) => {
-              const pos = latLngToSVG(threat.lat, threat.lng);
-              const isHovered = hoveredThreat === threat.id;
-              const size = threat.severity === 'critical' ? 10 : threat.severity === 'high' ? 8 : 6;
-              
-              return (
-                <g 
-                  key={threat.id}
-                  onMouseEnter={() => setHoveredThreat(threat.id)}
-                  onMouseLeave={() => setHoveredThreat(null)}
-                  onClick={() => setSelectedThreat(threat)}
-                  className="cursor-pointer"
-                >
-                  {/* Pulse effect */}
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={size + 15}
-                    fill="none"
-                    stroke={getSeverityColor(threat.severity)}
-                    strokeWidth="1"
-                    opacity={isHovered ? 0.5 : 0.2}
-                  >
-                    <animate attributeName="r" values={`${size};${size + 20};${size}`} dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                  
-                  {/* Outer glow */}
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={size + 6}
-                    fill={getSeverityColor(threat.severity)}
-                    opacity="0.2"
-                    filter="url(#glow)"
-                  />
-                  
-                  {/* Main dot */}
-                  <circle 
-                    cx={pos.x} 
-                    cy={pos.y} 
-                    r={isHovered ? size + 3 : size}
-                    fill={getSeverityColor(threat.severity)}
-                    stroke="white"
-                    strokeWidth="1"
-                    strokeOpacity="0.5"
-                    filter="url(#glow)"
-                    className="transition-all duration-200"
-                  />
-                  
-                  {/* Label on hover */}
-                  {isHovered && (
-                    <g>
-                      <rect 
-                        x={pos.x + 12} 
-                        y={pos.y - 25} 
-                        width={120} 
-                        height={50} 
-                        rx="4"
-                        fill="hsl(var(--background))"
-                        fillOpacity="0.95"
-                        stroke={getSeverityColor(threat.severity)}
-                        strokeWidth="1"
-                      />
-                      <text x={pos.x + 20} y={pos.y - 8} fill="white" fontSize="10" fontWeight="bold">
-                        {threat.city}, {threat.country}
-                      </text>
-                      <text x={pos.x + 20} y={pos.y + 5} fill={getSeverityColor(threat.severity)} fontSize="9">
-                        {threat.type}
-                      </text>
-                      <text x={pos.x + 20} y={pos.y + 18} fill="#888" fontSize="8">
-                        {threat.threatCount} threats • {threat.ip}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Target HQ */}
-            <g>
-              {/* Outer rings */}
-              <circle cx={targetPos.x} cy={targetPos.y} r="35" fill="none" stroke="#00ff88" strokeWidth="1" opacity="0.3">
-                <animate attributeName="r" values="35;45;35" dur="3s" repeatCount="indefinite" />
-              </circle>
-              <circle cx={targetPos.x} cy={targetPos.y} r="25" fill="none" stroke="#00ff88" strokeWidth="1.5" opacity="0.5">
-                <animate attributeName="r" values="25;35;25" dur="2s" repeatCount="indefinite" />
-              </circle>
-              
-              {/* Shield background */}
-              <circle cx={targetPos.x} cy={targetPos.y} r="18" fill="url(#targetGlow)" />
-              
-              {/* Shield icon background */}
-              <circle cx={targetPos.x} cy={targetPos.y} r="12" fill="hsl(var(--background))" stroke="#00ff88" strokeWidth="2" />
-              
-              {/* HQ Label */}
-              <text x={targetPos.x} y={targetPos.y + 35} fill="#00ff88" fontSize="10" textAnchor="middle" fontWeight="bold">
-                AEGIS HQ
-              </text>
-              <text x={targetPos.x} y={targetPos.y + 45} fill="#888" fontSize="8" textAnchor="middle">
-                New Delhi, India
-              </text>
-            </g>
-
-            {/* Radar sweep effect */}
-            <g transform={`translate(${targetPos.x}, ${targetPos.y})`}>
-              <defs>
-                <linearGradient id="radarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#00ff88" stopOpacity="0" />
-                  <stop offset="100%" stopColor="#00ff88" stopOpacity="0.4" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 0 0 L 80 -30 A 85 85 0 0 1 80 30 Z"
-                fill="url(#radarGrad)"
-              >
-                <animateTransform
-                  attributeName="transform"
-                  type="rotate"
-                  from="0"
-                  to="360"
-                  dur="4s"
-                  repeatCount="indefinite"
-                />
-              </path>
-            </g>
-          </svg>
-
-          {/* Selected Threat Panel */}
-          <AnimatePresence>
-            {selectedThreat && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="absolute top-4 right-4 w-72 bg-background/95 backdrop-blur-lg rounded-lg border border-primary/30 shadow-xl"
-              >
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant={selectedThreat.severity === 'critical' ? 'critical' : selectedThreat.severity === 'high' ? 'high' : 'medium'}>
-                      {selectedThreat.severity.toUpperCase()}
-                    </Badge>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedThreat(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <h3 className="font-bold text-lg">{selectedThreat.city}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedThreat.country}</p>
-                  <div className="mt-3 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Attack Type</span>
-                      <span className="font-medium">{selectedThreat.type}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Threat Count</span>
-                      <span className="font-medium text-destructive">{selectedThreat.threatCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Source IP</span>
-                      <span className="font-mono text-xs">{selectedThreat.ip}</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button size="sm" variant="destructive" className="flex-1">
-                      <Lock className="h-3 w-3 mr-1" />
-                      Block
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Eye className="h-3 w-3 mr-1" />
-                      Investigate
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Live Attack Feed */}
+          <div className="absolute top-4 right-16 z-10 w-64 max-h-48 overflow-hidden">
+            <div className="bg-background/80 backdrop-blur-sm rounded-lg border border-border/50 p-2">
+              <div className="text-xs font-semibold mb-2 flex items-center gap-1">
+                <Activity className="h-3 w-3 text-primary" />
+                Live Attack Feed
+              </div>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                <AnimatePresence>
+                  {attackEvents.slice(-5).reverse().map((event) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className={`text-[10px] p-1.5 rounded ${event.blocked ? 'bg-success/20' : 'bg-destructive/20'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono">{event.from.city}</span>
+                        <Badge variant={event.blocked ? 'success' : 'critical'} className="text-[8px] h-4">
+                          {event.blocked ? 'BLOCKED' : 'ALERT'}
+                        </Badge>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Bottom Stats */}
-        <div className="px-4 py-3 bg-secondary/20 border-t border-border/30">
-          <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                Critical: {criticalThreats.length}
-              </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-orange-400" />
-                High: {threats.filter(t => t.severity === 'high').length}
-              </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-warning" />
-                Medium: {threats.filter(t => t.severity === 'medium').length}
-              </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                Low: {threats.filter(t => t.severity === 'low').length}
-              </span>
+        {/* Selected Threat Details */}
+        <AnimatePresence>
+          {selectedThreat && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="p-4 bg-gradient-to-r from-destructive/10 via-secondary/30 to-destructive/10 border-t border-destructive/30"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-4 h-4 rounded-full animate-pulse"
+                    style={{ background: getSeverityColor(selectedThreat.severity) }}
+                  />
+                  <div>
+                    <h4 className="font-bold">{selectedThreat.city}, {selectedThreat.country}</h4>
+                    <p className="text-sm text-muted-foreground">{selectedThreat.type}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedThreat(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <div className="text-xs text-muted-foreground">Threat Count</div>
+                  <div className="text-lg font-bold">{selectedThreat.threatCount}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Severity</div>
+                  <Badge variant={selectedThreat.severity as any} className="mt-1">
+                    {selectedThreat.severity.toUpperCase()}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Source IP</div>
+                  <div className="text-sm font-mono">{selectedThreat.ip}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Coordinates</div>
+                  <div className="text-sm font-mono">{selectedThreat.lat.toFixed(2)}, {selectedThreat.lng.toFixed(2)}</div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Threat Legend */}
+        <div className="p-4 bg-secondary/20 border-t border-border/30">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-xs font-semibold">Threat Severity:</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-[#ff3b3b]" />
+                <span className="text-[10px]">Critical</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-[#ff8c00]" />
+                <span className="text-[10px]">High</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-[#ffd700]" />
+                <span className="text-[10px]">Medium</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-[#00ff88]" />
+                <span className="text-[10px]">Low</span>
+              </div>
             </div>
-            <span className="text-muted-foreground">
-              Last updated: Just now
-            </span>
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-success" />
+              <span className="text-xs">All data encrypted & blockchain verified</span>
+            </div>
           </div>
         </div>
       </CardContent>
