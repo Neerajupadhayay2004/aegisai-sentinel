@@ -15,6 +15,7 @@ import Assistant from "./pages/Assistant";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import SOCOperations from "./pages/SOCOperations";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/zero-trust" element={<ProtectedRoute><ZeroTrust /></ProtectedRoute>} />
           <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/soc" element={<ProtectedRoute><SOCOperations /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
