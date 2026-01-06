@@ -20,6 +20,7 @@ import {
   Radar,
   BarChart3,
   User,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: Activity, label: 'Live Threats', path: '/', badge: 6 },
   { icon: BarChart3, label: 'Predictive Analytics', path: '/predictive' },
+  { icon: Users, label: 'SOC Operations', path: '/soc', badge: 5 },
   { icon: Radar, label: 'Scanning', path: '/scanning' },
   { icon: Server, label: 'Endpoints', path: '/endpoints' },
   { icon: AlertTriangle, label: 'Incidents', path: '/incidents', badge: 3 },
