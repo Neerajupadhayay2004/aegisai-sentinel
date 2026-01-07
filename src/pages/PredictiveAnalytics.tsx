@@ -8,75 +8,84 @@ import { AISecurityChatLive } from '@/components/dashboard/AISecurityChatLive';
 import { AzureSecurityHub } from '@/components/dashboard/AzureSecurityHub';
 import { BlockchainSecurityModule } from '@/components/dashboard/BlockchainSecurityModule';
 import { SecurityAlertCenter } from '@/components/dashboard/SecurityAlertCenter';
+import { ThreatHuntingAdvanced } from '@/components/dashboard/ThreatHuntingAdvanced';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
-import { Brain, Globe, TrendingUp, Network, Shield, Activity, Cloud, Link2, Bell } from 'lucide-react';
+import { Brain, Globe, TrendingUp, Network, Shield, Activity, Cloud, Link2, Bell, Crosshair } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const PredictiveAnalytics = () => {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+          className="flex flex-col gap-4"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
               <span className="text-gradient-cyber">Predictive</span> Analytics
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               AI-powered threat forecasting with Azure & Blockchain integration
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant="info" className="px-4 py-2 text-sm gap-2">
-              <Brain className="h-4 w-4" />
-              AI Model Active
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <Badge variant="info" className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm gap-1 sm:gap-2">
+              <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
+              AI Active
             </Badge>
-            <Badge className="px-4 py-2 text-sm gap-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
-              <Cloud className="h-4 w-4" />
-              Azure Connected
+            <Badge className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm gap-1 sm:gap-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
+              <Cloud className="h-3 w-3 sm:h-4 sm:w-4" />
+              Azure
             </Badge>
-            <Badge className="px-4 py-2 text-sm gap-2 bg-purple-500/20 text-purple-400 border-purple-500/30">
-              <Link2 className="h-4 w-4" />
-              Blockchain Verified
+            <Badge className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm gap-1 sm:gap-2 bg-purple-500/20 text-purple-400 border-purple-500/30">
+              <Link2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              Blockchain
             </Badge>
-            <Badge variant="active" className="px-4 py-2 text-sm gap-2">
-              <Globe className="h-4 w-4" />
-              Live Monitoring
+            <Badge variant="active" className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm gap-1 sm:gap-2">
+              <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
+              Live
             </Badge>
           </div>
         </motion.div>
       </div>
 
-      {/* Tabbed Interface */}
-      <Tabs defaultValue="map" className="space-y-6">
-        <TabsList className="grid w-full max-w-4xl grid-cols-6">
-          <TabsTrigger value="map" className="gap-2">
-            <Globe className="h-4 w-4" />
-            Global Map
+      {/* Tabbed Interface - Mobile Responsive */}
+      <Tabs defaultValue="map" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 gap-1">
+          <TabsTrigger value="map" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3">
+            <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Global Map</span>
+            <span className="sm:hidden">Map</span>
           </TabsTrigger>
-          <TabsTrigger value="azure" className="gap-2">
-            <Cloud className="h-4 w-4" />
-            Azure Hub
+          <TabsTrigger value="hunting" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3">
+            <Crosshair className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Threat Hunt</span>
+            <span className="sm:hidden">Hunt</span>
           </TabsTrigger>
-          <TabsTrigger value="blockchain" className="gap-2">
-            <Link2 className="h-4 w-4" />
-            Blockchain
+          <TabsTrigger value="blockchain" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3">
+            <Link2 className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Blockchain</span>
+            <span className="sm:hidden">Chain</span>
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="gap-2">
-            <Bell className="h-4 w-4" />
+          <TabsTrigger value="azure" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3">
+            <Cloud className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Azure Hub</span>
+            <span className="sm:hidden">Azure</span>
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3 hidden sm:flex">
+            <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
             Alerts
           </TabsTrigger>
-          <TabsTrigger value="intel" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Threat Intel
+          <TabsTrigger value="intel" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3 hidden sm:flex">
+            <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+            Intel
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
-            <Activity className="h-4 w-4" />
+          <TabsTrigger value="analytics" className="gap-1 text-[10px] sm:text-sm px-1 sm:px-3 hidden sm:flex">
+            <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             Analytics
           </TabsTrigger>
         </TabsList>
@@ -96,6 +105,16 @@ const PredictiveAnalytics = () => {
             transition={{ delay: 0.2 }}
           >
             <AIFirewallAnalysis />
+          </motion.div>
+        </TabsContent>
+
+        {/* Threat Hunting Tab */}
+        <TabsContent value="hunting">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <ThreatHuntingAdvanced />
           </motion.div>
         </TabsContent>
 

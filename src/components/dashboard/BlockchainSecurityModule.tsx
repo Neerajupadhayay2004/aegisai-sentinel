@@ -25,7 +25,14 @@ import {
   Network,
   Search,
   Filter,
-  Download
+  Download,
+  Scan,
+  Brain,
+  ShieldCheck,
+  Bug,
+  Radar,
+  Play,
+  BarChart3
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
 interface BlockchainLog {
   id: string;
@@ -58,6 +66,8 @@ interface SmartContract {
   lastExecution: string;
   gasUsed: string;
   version: string;
+  vulnerabilities?: number;
+  auditScore?: number;
 }
 
 interface BlockchainNode {
@@ -78,10 +88,25 @@ interface TransactionStats {
   avgBlockTime: number;
 }
 
+interface SecurityScan {
+  id: string;
+  type: string;
+  status: 'running' | 'completed' | 'failed';
+  progress: number;
+  findings: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  startTime: string;
+}
+
 export const BlockchainSecurityModule = () => {
   const [activeTab, setActiveTab] = useState('ledger');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLog, setSelectedLog] = useState<BlockchainLog | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [securityScans, setSecurityScans] = useState<SecurityScan[]>([]);
+  
+  const { settings, playAlertSound, playScanSound } = useAudioAlerts();
   
   const [logs, setLogs] = useState<BlockchainLog[]>([
     { id: '1', hash: '0x7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a', previousHash: '0x4b2c...9f1a', timestamp: new Date(Date.now() - 30000).toISOString(), eventType: 'ACCESS_GRANT', data: 'User admin@aegis.io granted SIEM access', verified: true, blockNumber: 1847329, nonce: 42156, difficulty: 2, miner: '0x742d...F9E2' },
@@ -91,13 +116,13 @@ export const BlockchainSecurityModule = () => {
     { id: '5', hash: '0x5d8e2a7f1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e', previousHash: '0x1c4a...8b3d', timestamp: new Date(Date.now() - 900000).toISOString(), eventType: 'EVIDENCE_HASH', data: 'Forensic image hash stored for case CS-0089', verified: true, blockNumber: 1847325, nonce: 67890, difficulty: 2, miner: '0x742d...F9E2' },
   ]);
 
-  const [contracts] = useState<SmartContract[]>([
-    { name: 'AccessControl', address: '0x742dF9E2a1b2c3d4e5f6789012345678', status: 'active', executions: 15847, lastExecution: '2m ago', gasUsed: '1.2M', version: 'v2.1.0' },
-    { name: 'AuditLogger', address: '0x8f3aB4C1d2e3f4a5b6c7890123456789', status: 'active', executions: 234567, lastExecution: '30s ago', gasUsed: '45.8M', version: 'v3.0.1' },
-    { name: 'ThreatRegistry', address: '0x1e5cD7A8e9f0a1b2c3d4567890123456', status: 'active', executions: 8923, lastExecution: '5m ago', gasUsed: '890K', version: 'v1.5.2' },
-    { name: 'IncidentManager', address: '0x3b9fE2C4a5b6c7d8e9f0123456789012', status: 'active', executions: 4521, lastExecution: '15m ago', gasUsed: '2.3M', version: 'v2.0.0' },
-    { name: 'EvidenceVault', address: '0x5c8dA3B4c5d6e7f8a9b0123456789012', status: 'active', executions: 1234, lastExecution: '1h ago', gasUsed: '567K', version: 'v1.2.0' },
-    { name: 'ComplianceChecker', address: '0x7a2eC5D6e7f8a9b0c1d2345678901234', status: 'paused', executions: 789, lastExecution: '2h ago', gasUsed: '234K', version: 'v1.0.0' },
+  const [contracts, setContracts] = useState<SmartContract[]>([
+    { name: 'AccessControl', address: '0x742dF9E2a1b2c3d4e5f6789012345678', status: 'active', executions: 15847, lastExecution: '2m ago', gasUsed: '1.2M', version: 'v2.1.0', vulnerabilities: 0, auditScore: 98 },
+    { name: 'AuditLogger', address: '0x8f3aB4C1d2e3f4a5b6c7890123456789', status: 'active', executions: 234567, lastExecution: '30s ago', gasUsed: '45.8M', version: 'v3.0.1', vulnerabilities: 0, auditScore: 100 },
+    { name: 'ThreatRegistry', address: '0x1e5cD7A8e9f0a1b2c3d4567890123456', status: 'active', executions: 8923, lastExecution: '5m ago', gasUsed: '890K', version: 'v1.5.2', vulnerabilities: 1, auditScore: 94 },
+    { name: 'IncidentManager', address: '0x3b9fE2C4a5b6c7d8e9f0123456789012', status: 'active', executions: 4521, lastExecution: '15m ago', gasUsed: '2.3M', version: 'v2.0.0', vulnerabilities: 0, auditScore: 97 },
+    { name: 'EvidenceVault', address: '0x5c8dA3B4c5d6e7f8a9b0123456789012', status: 'active', executions: 1234, lastExecution: '1h ago', gasUsed: '567K', version: 'v1.2.0', vulnerabilities: 0, auditScore: 99 },
+    { name: 'ComplianceChecker', address: '0x7a2eC5D6e7f8a9b0c1d2345678901234', status: 'paused', executions: 789, lastExecution: '2h ago', gasUsed: '234K', version: 'v1.0.0', vulnerabilities: 2, auditScore: 85 },
   ]);
 
   const [nodes] = useState<BlockchainNode[]>([
@@ -121,6 +146,64 @@ export const BlockchainSecurityModule = () => {
     avgGasPrice: 25,
     avgBlockTime: 2.3,
   });
+
+  // Full Security Scan
+  const runFullScan = async () => {
+    setIsScanning(true);
+    setScanProgress(0);
+    
+    if (settings.enabled) {
+      playScanSound();
+    }
+
+    const scanTypes = [
+      'Smart Contract Audit',
+      'Reentrancy Analysis',
+      'Access Control Review',
+      'Gas Optimization',
+      'Vulnerability Scan',
+      'Consensus Verification'
+    ];
+
+    for (let i = 0; i < scanTypes.length; i++) {
+      const newScan: SecurityScan = {
+        id: `scan-${Date.now()}-${i}`,
+        type: scanTypes[i],
+        status: 'running',
+        progress: 0,
+        findings: 0,
+        severity: 'low',
+        startTime: new Date().toISOString()
+      };
+      
+      setSecurityScans(prev => [...prev, newScan]);
+      
+      // Simulate scan progress
+      for (let p = 0; p <= 100; p += 10) {
+        await new Promise(r => setTimeout(r, 100));
+        setScanProgress(((i / scanTypes.length) + (p / 100 / scanTypes.length)) * 100);
+      }
+      
+      // Complete scan with random findings
+      const findings = Math.floor(Math.random() * 5);
+      const severity = findings > 3 ? 'high' : findings > 1 ? 'medium' : 'low';
+      
+      setSecurityScans(prev => prev.map(s => 
+        s.id === newScan.id 
+          ? { ...s, status: 'completed', progress: 100, findings, severity } 
+          : s
+      ));
+    }
+
+    setIsScanning(false);
+    setScanProgress(100);
+    
+    if (settings.enabled) {
+      playAlertSound('success');
+    }
+    
+    toast.success('Full blockchain security scan completed');
+  };
 
   // Add new blockchain logs
   useEffect(() => {
