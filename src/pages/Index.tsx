@@ -6,8 +6,6 @@ import {
   Activity,
   Server,
   Wifi,
-  TrendingUp,
-  Lock,
   Zap,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -17,10 +15,12 @@ import { RadarScanner } from '@/components/dashboard/RadarScanner';
 import { ThreatChart, ThreatDistributionChart, ComplianceChart } from '@/components/dashboard/Charts';
 import { LiveScanStatus } from '@/components/dashboard/LiveScanStatus';
 import { AISecurityChat } from '@/components/dashboard/AISecurityChat';
-import { GlobalThreatMapSection } from '@/components/dashboard/GlobalThreatMapSection';
+import { EnhancedGlobalMap } from '@/components/dashboard/EnhancedGlobalMap';
 import { GeolocationBlocking } from '@/components/dashboard/GeolocationBlocking';
 import { AudioControlPanel } from '@/components/dashboard/AudioControlPanel';
 import { RealTimeThreatFeed } from '@/components/dashboard/RealTimeThreatFeed';
+import { DarkWebMonitoring } from '@/components/dashboard/DarkWebMonitoring';
+import { AutomatedResponseSystem } from '@/components/dashboard/AutomatedResponseSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -118,7 +118,13 @@ const Index = () => {
 
       {/* Global Threat Map Section */}
       <div className="mb-8">
-        <GlobalThreatMapSection />
+        <EnhancedGlobalMap />
+      </div>
+
+      {/* Dark Web & Automated Response */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <DarkWebMonitoring />
+        <AutomatedResponseSystem />
       </div>
 
       {/* Main Grid */}
